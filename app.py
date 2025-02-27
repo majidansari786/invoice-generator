@@ -9,7 +9,7 @@ config = pdfkit.configuration(wkhtmltopdf='/usr/bin/wkhtmltopdf')
 
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///invoices.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SECRET_KEY'] = 'abhasbvhbb82y4`92r1ubbu1bru2'
+app.config['SECRET_KEY'] = 'abhasbvhbb82y4`92r1ubbu1bru2asfbab'
 
 db = SQLAlchemy(app)
 
