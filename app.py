@@ -1,11 +1,10 @@
 from flask import Flask, request, jsonify, render_template, send_file
 from flask_sqlalchemy import SQLAlchemy
-import pdfkit
+from weasyprint import HTML
 import io
 import os
 
 app = Flask(__name__)
-config = pdfkit.configuration(wkhtmltopdf='/usr/bin/wkhtmltopdf')
 
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///invoices.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -28,7 +27,7 @@ def index():
 @app.route('/create/', methods=['POST'])
 def create():
     html = render_template('index.html')
-    pdf = pdfkit.from_string(html, False, configuration=config)
+    pdf = HTML(string=html).write_pdf("output.pdf")
     return send_file(
         io.BytesIO(pdf),
         download_name="invoice.pdf",
