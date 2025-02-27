@@ -26,10 +26,10 @@ def index():
 
 @app.route('/create/', methods=['POST'])
 def create():
-    html = render_template('index.html')
-    pdf = HTML(string=html).write_pdf("output.pdf")
+    html = render_template('index.html')  # Replace with your actual template
+    pdf_bytes = HTML(string=html).write_pdf()
     return send_file(
-        io.BytesIO(pdf),
+        io.BytesIO(pdf_bytes),
         download_name="invoice.pdf",
         as_attachment=True,
         mimetype='application/pdf'
