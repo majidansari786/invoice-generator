@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, send_file
-from weasyprint import HTML
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
 import io
 
 app = Flask(__name__)
@@ -34,69 +35,58 @@ def create():
     # Calculate total
     total_amount = sum(item['total'] for item in items)
 
-    # Generate HTML for the PDF
-    html_content = f"""
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <style>
-            body {{ font-family: Arial, sans-serif; margin: 40px; }}
-            .header {{ text-align: center; margin-bottom: 40px; }}
-            .details {{ margin-bottom: 20px; }}
-            table {{ width: 100%; border-collapse: collapse; }}
-            th, td {{ border: 1px solid #ddd; padding: 8px; text-align: left; }}
-            th {{ background-color: #f2f2f2; }}
-            .total {{ text-align: right; margin-top: 20px; font-weight: bold; }}
-        </style>
-    </head>
-    <body>
-        <div class="header">
-            <h1>Invoice</h1>
-        </div>
-        <div class="details">
-            <h3>From:</h3>
-            <p>{company_name}</p>
-            <p>{company_address.replace('\n', '<br>')}</p>
-        </div>
-        <div class="details">
-            <h3>To:</h3>
-            <p>{client_name}</p>
-            <p>{client_address.replace('\n', '<br>')}</p>
-        </div>
-        <table>
-            <tr>
-                <th>Description</th>
-                <th>Quantity</th>
-                <th>Unit Price</th>
-                <th>Total</th>
-            </tr>
-    """
+    # Generate PDF using ReportLab
+    buffer = io.BytesIO()
+    pdf = canvas.Canvas(buffer, pagesize=letter)
+    width, height = letter
 
+    # Title
+    pdf.setFont("Helvetica-Bold", 16)
+    pdf.drawCentredString(width / 2, height - 50, "Invoice")
+
+    # Company and Client Details
+    pdf.setFont("Helvetica", 12)
+    pdf.drawString(50, height - 100, "From:")
+    pdf.drawString(50, height - 120, company_name)
+    pdf.drawString(50, height - 140, company_address)
+
+    pdf.drawString(300, height - 100, "To:")
+    pdf.drawString(300, height - 120, client_name)
+    pdf.drawString(300, height - 140, client_address)
+
+    # Table Headers
+    pdf.setFont("Helvetica-Bold", 12)
+    y_position = height - 180
+    pdf.drawString(50, y_position, "Description")
+    pdf.drawString(250, y_position, "Quantity")
+    pdf.drawString(350, y_position, "Unit Price")
+    pdf.drawString(450, y_position, "Total")
+
+    pdf.line(50, y_position - 10, 550, y_position - 10)  # Line under headers
+
+    # Table Rows
+    pdf.setFont("Helvetica", 12)
+    y_position -= 30
     for item in items:
-        html_content += f"""
-            <tr>
-                <td>{item['description']}</td>
-                <td>{item['quantity']}</td>
-                <td>${item['price']:.2f}</td>
-                <td>${item['total']:.2f}</td>
-            </tr>
-        """
+        pdf.drawString(50, y_position, item['description'])
+        pdf.drawString(250, y_position, str(item['quantity']))
+        pdf.drawString(350, y_position, f"${item['price']:.2f}")
+        pdf.drawString(450, y_position, f"${item['total']:.2f}")
+        y_position -= 20
 
-    html_content += f"""
-        </table>
-        <div class="total">
-            Total: ${total_amount:.2f}
-        </div>
-    </body>
-    </html>
-    """
+    # Total Amount
+    pdf.setFont("Helvetica-Bold", 12)
+    pdf.drawString(350, y_position - 20, "Total:")
+    pdf.drawString(450, y_position - 20, f"${total_amount:.2f}")
 
-    # Generate PDF
-    pdf_bytes = HTML(string=html_content).write_pdf()
+    # Save PDF
+    pdf.showPage()
+    pdf.save()
+    buffer.seek(0)
 
     # Serve the PDF
     return send_file(
-        io.BytesIO(pdf_bytes),
+        buffer,
         download_name="invoice.pdf",
         as_attachment=True,
         mimetype='application/pdf'
