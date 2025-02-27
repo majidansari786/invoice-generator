@@ -77,7 +77,7 @@ def create():
     # Total Amount
     pdf.setFont("Helvetica-Bold", 12)
     pdf.drawString(350, y_position - 20, "Total:")
-    pdf.drawString(450, y_position - 20, f"${total_amount:.2f}")
+    pdf.drawString(450, y_position - 20, f"₹{total_amount:.2f}")
 
     # Save PDF
     pdf.showPage()
